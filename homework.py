@@ -78,7 +78,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Анализ ответа"""
+    """Анализ ответа."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     verdict = HOMEWORK_VERDICTS.get(homework_status)
