@@ -16,8 +16,3 @@ class DecodeJSONException(Exception):
 class MessageDeliveryException(Exception):
     """Сообщение не доставлено."""
     pass
-
-
-class ProgramCrashException(Exception):
-    """Сбой в работе программы."""
-    pass

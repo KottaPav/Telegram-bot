@@ -6,11 +6,9 @@ import telegram
 import time
 
 from dotenv import load_dotenv
-import json.decoder
 
 from exceptions import APIRequestException, APIResponseException,\
-    DecodeJSONException, MessageDeliveryException,\
-    ProgramCrashException
+    DecodeJSONException, MessageDeliveryException
 
 
 load_dotenv()
@@ -57,44 +55,45 @@ def get_api_answer(timestamp):
         raise APIRequestException(f'Ошибка при запросе к API: {error}')
     try:
         return response.json()
-    except json.decoder.JSONDecodeError:
+    except Exception:
         raise DecodeJSONException('Ошибка форматирования ответа')
 
 
 def check_response(response):
     """Проверка ответ API на соответствие документации."""
-    if 'homeworks' not in response:
-        logging.error('Отсутствует ключ homeworks')
-        raise TypeError('Отсутствует ключ homeworks')
     if not isinstance(response, dict):
         logging.error(f'Ошибка в типе ответа API: {response}')
         raise TypeError(f'Ошибка в типе ответа API: {response}')
+    if 'homeworks' not in response:
+        logging.error('Отсутствует ключ homeworks')
+        raise TypeError('Отсутствует ключ homeworks')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         logging.error(f'Ошибка в типе ответа API: {response}')
         raise TypeError(f'Ошибка в типе ответа API: {response}')
-    homework = homeworks[0]
-    return homework
+    if len(homeworks) == 0:
+        logging.error('Список пуст')
+        raise IndexError('Список пуст')
 
 
 def parse_status(homework):
     """Анализ ответа."""
+    if not isinstance(homework, dict):
+        logging.error(f'Ошибка в типе ответа API: {homework}')
+        raise TypeError(f'Ошибка в типе ответа API: {homework}')
     if 'homework_name' not in homework:
         logging.error('Отсутствует ключ homework_name')
         raise KeyError('Отсутствует ключ homework_name')
     if 'status' not in homework:
         logging.error('Отсутствует ключ homework_status')
         raise KeyError('Отсутствует ключ homework_status')
-    if not isinstance(homework, dict):
-        logging.error(f'Ошибка в типе ответа API: {homework}')
-        raise TypeError(f'Ошибка в типе ответа API: {homework}')
     homework_name = homework['homework_name']
     homework_status = homework['status']
-    verdict = HOMEWORK_VERDICTS.get(homework_status)
-    if not verdict:
+    if homework_status not in HOMEWORK_VERDICTS:
         logging.error(f'Неизвестный статус домашней работы: {homework_status}')
         raise KeyError(
             f'Неизвестный статус домашней работы: {homework_status}')
+    verdict = HOMEWORK_VERDICTS.get(homework_status)
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
@@ -119,9 +118,8 @@ def main():
                     send_message(bot, message)
                 else:
                     logging.debug('Отсутсвие новых статусов')
-        except ProgramCrashException as error:
+        except Exception as error:
             logging.error(f'Сбой в работе программы: {error}')
-            send_message(bot, f'Сбой в работе программы: {error}')
         finally:
             time.sleep(RETRY_PERIOD)
 
