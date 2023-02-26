@@ -44,7 +44,7 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Запрос к эндпоинту."""
-    payload = {'from_date': timestamp}
+    payload = {'from_date': 1675177200}
     try:
         response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
         if response.status_code != 200:
@@ -117,9 +117,13 @@ def main():
                     message = parse_status(current_status)
                     send_message(bot, message)
                 else:
-                    logging.debug('Отсутсвие новых статусов')
+                    logging.debug('Статус работы не изменился')
         except Exception as error:
-            logging.error(f'Сбой в работе программы: {error}')
+            error_message = f'{error}'
+            if error_message != previous_status:
+                previous_status = error_message
+                send_message(bot, error_message)
+                logging.error(f'Сбой в работе программы: {error}')
         finally:
             time.sleep(RETRY_PERIOD)
 
